@@ -1,6 +1,7 @@
 package com.example.playbox.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.stereotype.Service;
 
@@ -25,7 +26,7 @@ public class UserServiceImpl{
 
  
     public PlayBoxUser createUser(PlayBoxUser user) {
-        
+
         user.setCreatedAt(LocalDateTime.now().toString());
         user.setUpdatedAt(LocalDateTime.now().toString());
         user.setBalance(0f);
@@ -68,4 +69,13 @@ public class UserServiceImpl{
         tx.setTimestamp(LocalDateTime.now().toString());
         txRepo.save(tx);
     }
+    public List<PlayBoxUser> getAllUsers() {
+        return userRepo.findAll();
+    }
+
+    
+    public PlayBoxUser getByPhone(String phone) {
+        return userRepo.findByPhone(phone);
+    }
+    
 }

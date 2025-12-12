@@ -1,6 +1,8 @@
 package com.example.playbox.controller;
 
 
+import java.util.List;
+
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -48,5 +50,16 @@ public class UserController {
     ) {
         return userService.deductBalance(cardUid, amount);
     }
+
+    @GetMapping("/all")
+   public List<PlayBoxUser> getAllUsers() {
+    return userService.getAllUsers();
+}
+
+@GetMapping("/phone/{phone}")
+public PlayBoxUser getByPhone(@PathVariable String phone) {
+    return userService.getByPhone(phone);
+}
+
 }
 
