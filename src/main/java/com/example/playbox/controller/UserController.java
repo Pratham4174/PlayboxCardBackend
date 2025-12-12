@@ -20,7 +20,9 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5174")
+@CrossOrigin(origins = {"http://localhost:5174",
+"https://playboxcard.vercel.app","https://*.vercel.app"}
+)
 public class UserController {
 
     private final UserServiceImpl userService;

@@ -16,7 +16,9 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/rfid")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5174")
+@CrossOrigin(origins = {"http://localhost:5174",
+"https://playboxcard.vercel.app","https://*.vercel.app"}
+)
 public class RfidController {
 
     private final UserServiceImpl userService;
