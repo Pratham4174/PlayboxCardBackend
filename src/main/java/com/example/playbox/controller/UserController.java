@@ -3,7 +3,6 @@ package com.example.playbox.controller;
 
 import java.util.List;
 
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,9 +19,6 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
-@CrossOrigin(origins = {"http://localhost:5174",
-"https://playboxcard.vercel.app","https://*.vercel.app"}
-)
 public class UserController {
 
     private final UserServiceImpl userService;

@@ -1,6 +1,5 @@
 package com.example.playbox.controller;
 
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,9 +15,6 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/rfid")
 @RequiredArgsConstructor
-@CrossOrigin(origins = {"http://localhost:5174",
-"https://playboxcard.vercel.app","https://*.vercel.app"}
-)
 public class RfidController {
 
     private final UserServiceImpl userService;
