@@ -44,10 +44,13 @@ public class UserController {
     @PostMapping("/deduct")
     public PlayBoxUser deductBalance(
             @RequestParam String cardUid,
-            @RequestParam float amount
+            @RequestParam float amount,
+            @RequestParam String deductor,
+            @RequestParam String description
     ) {
-        return userService.deductBalance(cardUid, amount);
+        return userService.deductBalance(cardUid, amount, deductor, description);
     }
+    
 
     @GetMapping("/all")
    public List<PlayBoxUser> getAllUsers() {

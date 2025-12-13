@@ -30,7 +30,7 @@ public class TransactionEntity {
     @Column(name = "balance_after", nullable = false)
     private Float balanceAfter;
     
-
+    private String adminName; 
     private String description;
 
     private String timestamp;
