@@ -32,13 +32,14 @@ public class UserServiceImpl {
 
     /* ---------------- ADD BALANCE ---------------- */
 
-    public PlayBoxUser addBalance(String cardUid, float amount) {
+    public PlayBoxUser addBalance(String cardUid, float amount, String adminName) {
         PlayBoxUser user = getByCardUid(cardUid);
 
         user.setBalance(user.getBalance() + amount);
         user.setUpdatedAt(LocalDateTime.now().toString());
+       
 
-        saveTransaction(user, "ADD", amount, null, "Balance added");
+        saveTransaction(user, "ADD", amount, adminName, "Balance added");
 
         return userRepo.save(user);
     }
@@ -71,7 +72,7 @@ public class UserServiceImpl {
             PlayBoxUser user,
             String type,
             float amount,
-            String deductor,
+            String adminName,
             String description
     ) {
         TransactionEntity tx = new TransactionEntity();
@@ -83,7 +84,8 @@ public class UserServiceImpl {
         tx.setTimestamp(LocalDateTime.now().toString());
 
         // ✅ NEW FIELDS
-        tx.setAdminName(deductor);;        // null for ADD
+        tx.setAdminName(adminName);
+        tx.setUserName(user.getName());        // null for ADD
         tx.setDescription(description);  // reason / note
 
         txRepo.save(tx);

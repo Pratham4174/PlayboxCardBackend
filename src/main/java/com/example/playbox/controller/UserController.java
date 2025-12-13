@@ -36,9 +36,10 @@ public class UserController {
     @PostMapping("/add")
     public PlayBoxUser addBalance(
             @RequestParam String cardUid,
-            @RequestParam float amount
+            @RequestParam float amount,
+            @RequestParam String adminName
     ) {
-        return userService.addBalance(cardUid, amount);
+        return userService.addBalance(cardUid, amount, adminName);
     }
 
     @PostMapping("/deduct")
