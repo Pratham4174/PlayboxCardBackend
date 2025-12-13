@@ -1,5 +1,6 @@
 package com.example.playbox.service;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -81,7 +82,7 @@ public class UserServiceImpl {
         tx.setType(type);
         tx.setAmount(amount);
         tx.setBalanceAfter(user.getBalance());
-        tx.setTimestamp(LocalDateTime.now().toString());
+        tx.setTimestamp(Instant.now());
 
         // ✅ NEW FIELDS
         tx.setAdminName(adminName);

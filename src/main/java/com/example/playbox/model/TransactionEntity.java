@@ -1,6 +1,8 @@
 package com.example.playbox.model;
 
 
+import java.time.Instant;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -36,5 +38,5 @@ public class TransactionEntity {
     private String adminName; 
     private String description;
 
-    private String timestamp;
+    private Instant timestamp;
 }
