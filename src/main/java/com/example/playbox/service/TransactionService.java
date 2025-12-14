@@ -70,14 +70,13 @@ public class TransactionService {
     }
      public DailyRevenueDashboardResponse getTodayDashboard() {
 
-      Instant start = LocalDate.now()
-        .atStartOfDay(ZoneId.systemDefault())
-        .toInstant();
+        ZoneId IST = ZoneId.of("Asia/Kolkata");
 
-Instant end = LocalDate.now()
-        .atTime(23, 59, 59)
-        .atZone(ZoneId.systemDefault())
-        .toInstant();
+        LocalDate today = LocalDate.now(IST);
+        
+        Instant start = today.atStartOfDay(IST).toInstant();
+        Instant end = today.plusDays(1).atStartOfDay(IST).toInstant();
+        
 
 
         Double totalAdded = transactionRepo.totalAddedToday(start, end);
