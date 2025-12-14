@@ -1,9 +1,13 @@
 package com.example.playbox.service;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.example.playbox.dto.DailyRevenueDashboardResponse;
 import com.example.playbox.model.TransactionEntity;
 import com.example.playbox.repository.TransactionRepository;
 
@@ -64,4 +68,49 @@ public class TransactionService {
 
         return transactionRepo.findAll();
     }
+     public DailyRevenueDashboardResponse getTodayDashboard() {
+
+      Instant start = LocalDate.now()
+        .atStartOfDay(ZoneId.systemDefault())
+        .toInstant();
+
+Instant end = LocalDate.now()
+        .atTime(23, 59, 59)
+        .atZone(ZoneId.systemDefault())
+        .toInstant();
+
+
+        Double totalAdded = transactionRepo.totalAddedToday(start, end);
+        Double totalDeducted = transactionRepo.totalDeductedToday(start, end);
+
+        List<Object[]> staffRaw = transactionRepo.mostActiveStaff(start, end);
+        List<Object[]> userRaw = transactionRepo.mostActiveUsers(start, end);
+
+        DailyRevenueDashboardResponse response = new DailyRevenueDashboardResponse();
+        response.setTotalDeposited(totalAdded);
+        response.setTotalDeducted(totalDeducted);
+        response.setNetCashflow(totalAdded - totalDeducted);
+
+        response.setMostActiveStaff(
+            staffRaw.stream()
+                .map(r -> new DailyRevenueDashboardResponse.StatItem(
+                        (String) r[0],
+                        (Long) r[1]
+                ))
+                .toList()
+        );
+
+        response.setMostActiveUsers(
+            userRaw.stream()
+                .map(r -> new DailyRevenueDashboardResponse.StatItem(
+                        (String) r[0],
+                        (Long) r[1]
+                ))
+                .toList()
+        );
+
+        return response;
+    }
+
+    
 }

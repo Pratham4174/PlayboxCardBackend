@@ -1,10 +1,13 @@
 package com.example.playbox.repository;
 
+import java.time.Instant;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.example.playbox.model.TransactionEntity;
 
@@ -31,4 +34,87 @@ public interface TransactionRepository extends JpaRepository<TransactionEntity, 
         String adminName, String start, String end, Pageable pageable);
     Page<TransactionEntity> findByUserIdAndAdminNameAndTimestampBetween(
         Integer userId, String adminName, String start, String end, Pageable pageable);
+
+        @Query("""
+        SELECT COALESCE(SUM(t.amount), 0)
+        FROM TransactionEntity t
+        WHERE t.type = 'ADD'
+        AND t.timestamp >= :start
+        AND t.timestamp <= :end
+    """)
+    Double totalAddedToday(Instant start, Instant end);
+
+    // Total deducted today
+    @Query("""
+        SELECT COALESCE(SUM(t.amount), 0)
+        FROM TransactionEntity t
+        WHERE t.type = 'DEDUCT'
+        AND t.timestamp >= :start
+        AND t.timestamp <= :end
+    """)
+    Double totalDeductedToday(Instant start, Instant end);
+
+    // Most active staff (by number of transactions)
+    @Query("""
+        SELECT t.adminName, COUNT(t.id)
+        FROM TransactionEntity t
+        WHERE t.timestamp >= :start
+        AND t.timestamp <= :end
+        GROUP BY t.adminName
+        ORDER BY COUNT(t.id) DESC
+    """)
+    List<Object[]> mostActiveStaff(Instant start, Instant end);
+
+    // Most active users
+    @Query("""
+        SELECT t.userName, COUNT(t.id)
+        FROM TransactionEntity t
+        WHERE t.timestamp >= :start
+        AND t.timestamp <= :end
+        GROUP BY t.userName
+        ORDER BY COUNT(t.id) DESC
+    """)
+    List<Object[]> mostActiveUsers(Instant start, Instant end);
+
+    @Query("""
+  SELECT COALESCE(SUM(t.amount), 0)
+  FROM TransactionEntity t
+  WHERE t.userId = :userId AND t.type = 'ADD'
+""")
+Double getTotalRecharge(@Param("userId") Integer userId);
+
+@Query("""
+  SELECT COALESCE(SUM(t.amount), 0)
+  FROM TransactionEntity t
+  WHERE t.userId = :userId AND t.type = 'DEDUCT'
+""")
+Double getTotalDeduction(@Param("userId") Integer userId);
+
+@Query("""
+  SELECT COUNT(t)
+  FROM TransactionEntity t
+  WHERE t.userId = :userId AND t.type = 'DEDUCT'
+""")
+Long getTotalVisits(@Param("userId") Integer userId);
+
+
+@Query("""
+  SELECT MAX(t.timestamp)
+  FROM TransactionEntity t
+  WHERE t.userId = :userId AND t.type = 'DEDUCT'
+""")
+String getLastVisit(@Param("userId") Integer userId);
+
+List<TransactionEntity> findTop10ByUserIdOrderByTimestampDesc(Integer userId);
+
+@Query("""
+  SELECT DATE(t.timestamp), SUM(t.amount)
+  FROM TransactionEntity t
+  WHERE t.userId = :userId AND t.type = 'ADD'
+  GROUP BY DATE(t.timestamp)
+  ORDER BY DATE(t.timestamp)
+""")
+List<Object[]> getRechargeHistory(@Param("userId") Integer userId);
+
+
 }

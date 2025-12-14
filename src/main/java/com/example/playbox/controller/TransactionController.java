@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.playbox.dto.DailyRevenueDashboardResponse;
 import com.example.playbox.model.TransactionEntity;
 import com.example.playbox.service.TransactionService;
 
@@ -34,5 +35,10 @@ public class TransactionController {
             @RequestParam(required = false) String endDate
     ) {
         return transactionService.filter(userId, adminName, startDate, endDate);
+    }
+
+      @GetMapping("/daily")
+    public DailyRevenueDashboardResponse getDailyDashboard() {
+        return transactionService.getTodayDashboard();
     }
 }

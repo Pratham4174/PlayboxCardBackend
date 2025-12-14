@@ -10,4 +10,6 @@ public interface PlayBoxUserRepository extends JpaRepository<PlayBoxUser, Long> 
     Optional<PlayBoxUser> findByCardUid(String cardUid);
     PlayBoxUser findByPhone(String phone);
 
+    
+
 }
