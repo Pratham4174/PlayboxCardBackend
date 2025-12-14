@@ -11,6 +11,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.playbox.dto.UserDetailsDTO;
+import com.example.playbox.dto.UserStatsDTO;
+import com.example.playbox.dto.UserSummaryDTO;
 import com.example.playbox.model.PlayBoxUser;
 import com.example.playbox.service.UserServiceImpl;
 
@@ -62,6 +65,33 @@ public class UserController {
 public PlayBoxUser getByPhone(@PathVariable String phone) {
     return userService.getByPhone(phone);
 }
+@GetMapping("/all-summary")
+    public List<UserSummaryDTO> getAllUsersSummary() {
+        return userService.getAllUsersSummary();
+    }
 
+    /**
+     * Get user details by ID including lifetime stats
+     */
+    @GetMapping("/{userId}/details")
+    public UserDetailsDTO getUserDetails(@PathVariable Integer userId) {
+        return userService.getUserDetails(userId);
+    }
+
+    /**
+     * Get overall user statistics
+     */
+    @GetMapping("/stats")
+    public UserStatsDTO getUserStats() {
+        return userService.getUserStats();
+    }
+
+    /**
+     * Search users by name, ID, phone, or email
+     */
+    @GetMapping("/search")
+    public List<UserSummaryDTO> searchUsers(@RequestParam String q) {
+        return userService.searchUsers(q);
+    }
 }
 

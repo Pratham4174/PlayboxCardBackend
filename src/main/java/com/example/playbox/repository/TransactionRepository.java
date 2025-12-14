@@ -98,12 +98,13 @@ Double getTotalDeduction(@Param("userId") Integer userId);
 Long getTotalVisits(@Param("userId") Integer userId);
 
 
+// In TransactionRepository.java
 @Query("""
-  SELECT MAX(t.timestamp)
-  FROM TransactionEntity t
-  WHERE t.userId = :userId AND t.type = 'DEDUCT'
+    SELECT MAX(t.timestamp)
+    FROM TransactionEntity t
+    WHERE t.userId = :userId AND t.type = 'DEDUCT'
 """)
-String getLastVisit(@Param("userId") Integer userId);
+Instant getLastVisit(@Param("userId") Integer userId);
 
 List<TransactionEntity> findTop10ByUserIdOrderByTimestampDesc(Integer userId);
 
@@ -116,5 +117,6 @@ List<TransactionEntity> findTop10ByUserIdOrderByTimestampDesc(Integer userId);
 """)
 List<Object[]> getRechargeHistory(@Param("userId") Integer userId);
 
-
+// Find ADD transactions for a user, ordered by timestamp
+List<TransactionEntity> findByUserIdAndTypeOrderByTimestampDesc(Integer userId, String type);
 }
