@@ -111,5 +111,8 @@ public class TransactionService {
         return response;
     }
 
+    public List<TransactionEntity> getByUserId(Integer userId) {
+        return transactionRepo.findByUserId(userId);
+    }
     
 }

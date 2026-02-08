@@ -119,4 +119,6 @@ List<Object[]> getRechargeHistory(@Param("userId") Integer userId);
 
 // Find ADD transactions for a user, ordered by timestamp
 List<TransactionEntity> findByUserIdAndTypeOrderByTimestampDesc(Integer userId, String type);
+
+
 }

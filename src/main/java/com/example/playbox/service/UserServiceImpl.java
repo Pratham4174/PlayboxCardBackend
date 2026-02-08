@@ -350,4 +350,14 @@ public class UserServiceImpl {
         dto.setBalanceAfter(tx.getBalanceAfter());
         return dto;
     }
+    public PlayBoxUser updateUser(PlayBoxUser user) {
+        PlayBoxUser existing = userRepo.findById(user.getId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    
+        existing.setName(user.getName());
+        existing.setEmail(user.getEmail());
+    
+        return userRepo.save(existing);
+    }
+    
 }

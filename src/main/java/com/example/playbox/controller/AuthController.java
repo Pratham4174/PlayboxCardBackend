@@ -1,0 +1,97 @@
+package com.example.playbox.controller;
+
+import java.util.Map;
+import java.util.UUID;
+
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.playbox.model.OtpVerification;
+import com.example.playbox.model.PlayBoxUser;
+import com.example.playbox.repository.OtpRepository;
+import com.example.playbox.repository.PlayBoxUserRepository;
+
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequestMapping("/api/auth")
+@RequiredArgsConstructor
+public class AuthController {
+
+    private final PlayBoxUserRepository userRepository;
+    private final OtpRepository otpRepository;
+
+    // =========================
+    // STEP 1 - SEND OTP
+    // =========================
+    @PostMapping("/send-otp")
+    public String sendOtp(@RequestBody Map<String, String> request) {
+
+        String phone = request.get("phone");
+
+        if (phone == null || phone.isBlank()) {
+            throw new RuntimeException("Phone number required");
+        }
+
+        String otp = String.valueOf((int)(Math.random() * 9000) + 1000);
+
+        OtpVerification record = new OtpVerification();
+        record.setPhone(phone);
+        record.setOtp(otp);
+        record.setVerified(false);
+        record.setCreatedAt(java.time.Instant.now().toString());
+
+        otpRepository.save(record);
+        System.out.println("Generated OTP for " + phone + ": " + otp);
+        // 🔥 Replace with SMS integration later
+        return "OTP Sent: " + otp;
+    }
+
+    // =========================
+    // STEP 2 - VERIFY OTP
+    // =========================
+    @PostMapping("/verify-otp")
+    public PlayBoxUser verifyOtp(@RequestBody Map<String, String> request) {
+
+        String phone = request.get("phone");
+        String otp = request.get("otp");
+        String name = request.get("name");
+
+        if (phone == null || otp == null) {
+            throw new RuntimeException("Phone and OTP required");
+        }
+
+        OtpVerification record = otpRepository
+                .findTopByPhoneOrderByIdDesc(phone)
+                .orElseThrow(() -> new RuntimeException("OTP not found"));
+
+        if (!record.getOtp().equals(otp)) {
+            throw new RuntimeException("Invalid OTP");
+        }
+
+        record.setVerified(true);
+        otpRepository.save(record);
+
+        // 🔍 Check if user exists
+        PlayBoxUser user = userRepository.findByPhone(phone);
+
+        if (user != null) {
+            return user; // LOGIN
+        }
+
+        // 🆕 Create new user (SIGNUP)
+        PlayBoxUser newUser = new PlayBoxUser();
+        newUser.setPhone(phone);
+        newUser.setName(name != null ? name : "Guest");
+        newUser.setBalance(0f);
+
+        // 🔥 IMPORTANT: card_uid cannot be null (your DB constraint)
+        newUser.setCardUid("CARD-" + UUID.randomUUID().toString().substring(0,8));
+
+        newUser.setCreatedAt(java.time.Instant.now().toString());
+
+        return userRepository.save(newUser);
+    }
+}
