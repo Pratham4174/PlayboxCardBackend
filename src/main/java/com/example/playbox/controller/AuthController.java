@@ -1,7 +1,7 @@
 package com.example.playbox.controller;
 
 import java.util.Map;
-import java.util.UUID;
+import java.util.Locale;
 
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -78,20 +78,36 @@ public class AuthController {
         PlayBoxUser user = userRepository.findByPhone(phone);
 
         if (user != null) {
+            // Safety: clear legacy auto-generated placeholder card ids from old builds.
+            if (isLegacyAutoCard(user.getCardUid())) {
+                user.setCardUid(null);
+                user = userRepository.save(user);
+            }
             return user; // LOGIN
         }
 
         // 🆕 Create new user (SIGNUP)
+        if (name == null || name.isBlank()) {
+            throw new RuntimeException("Name is required for new user signup");
+        }
+
         PlayBoxUser newUser = new PlayBoxUser();
         newUser.setPhone(phone);
-        newUser.setName(name != null ? name : "Guest");
+        newUser.setName(name.trim());
         newUser.setBalance(0f);
 
-        // 🔥 IMPORTANT: card_uid cannot be null (your DB constraint)
-        newUser.setCardUid("CARD-" + UUID.randomUUID().toString().substring(0,8));
+        // New player account starts without RFID card; admin assigns it later.
+        newUser.setCardUid(null);
 
         newUser.setCreatedAt(java.time.Instant.now().toString());
 
         return userRepository.save(newUser);
+    }
+
+    private boolean isLegacyAutoCard(String cardUid) {
+        if (cardUid == null) {
+            return false;
+        }
+        return cardUid.trim().toUpperCase(Locale.ROOT).startsWith("CARD-");
     }
 }

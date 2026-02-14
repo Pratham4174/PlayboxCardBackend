@@ -21,7 +21,7 @@ public class PlayBoxUser {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "card_uid", nullable = false, unique = true, length = 100)
+    @Column(name = "card_uid", unique = true, length = 100)
     private String cardUid;
 
     @Column(nullable = false, length = 100)

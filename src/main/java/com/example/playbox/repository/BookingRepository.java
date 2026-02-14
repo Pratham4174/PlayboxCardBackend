@@ -8,4 +8,5 @@ import com.example.playbox.model.Booking;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findByUserId(Integer userId);
+    List<Booking> findBySlotIdInAndStatus(List<Long> slotIds, String status);
 }

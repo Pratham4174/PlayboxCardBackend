@@ -4,19 +4,29 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.playbox.dto.RechargeHistoryDTO;
 import com.example.playbox.dto.TransactionDTO;
 import com.example.playbox.dto.UserDetailsDTO;
 import com.example.playbox.dto.UserStatsDTO;
 import com.example.playbox.dto.UserSummaryDTO;
+import com.example.playbox.model.AdminUser;
+import com.example.playbox.model.Booking;
 import com.example.playbox.model.PlayBoxUser;
+import com.example.playbox.model.Slot;
 import com.example.playbox.model.TransactionEntity;
+import com.example.playbox.repository.AdminUserRepository;
+import com.example.playbox.repository.BookingRepository;
 import com.example.playbox.repository.PlayBoxUserRepository;
+import com.example.playbox.repository.SlotRepository;
 import com.example.playbox.repository.TransactionRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -27,6 +37,16 @@ public class UserServiceImpl {
 
     private final PlayBoxUserRepository userRepo;
     private final TransactionRepository txRepo;
+    private final SlotRepository slotRepository;
+    private final BookingRepository bookingRepository;
+    private final AdminUserRepository adminUserRepository;
+
+    private static final Set<String> SLOT_REQUIRED_ACTIVITIES = new HashSet<>(Set.of(
+            "cricket",
+            "pickleball",
+            "swimming pool",
+            "swimming"
+    ));
 
     public PlayBoxUser getByCardUid(String cardUid) {
         return userRepo.findByCardUid(cardUid).orElse(null);
@@ -55,16 +75,55 @@ public class UserServiceImpl {
 
     /* ---------------- DEDUCT BALANCE ---------------- */
 
+    @Transactional
     public PlayBoxUser deductBalance(
             String cardUid,
             float amount,
             String deductor,
-            String description
+            String description,
+            Long sportId,
+            Long slotId
     ) {
         PlayBoxUser user = getByCardUid(cardUid);
+        String normalizedActivity = normalizeActivity(description);
+
+        if (normalizedActivity.isEmpty()) {
+            throw new RuntimeException("Activity description is required");
+        }
+
+        boolean requiresSlotSelection = SLOT_REQUIRED_ACTIVITIES.contains(normalizedActivity);
+        if (requiresSlotSelection && slotId == null) {
+            throw new RuntimeException("Slot selection is required for " + description);
+        }
 
         if (user.getBalance() < amount) {
             throw new RuntimeException("Insufficient Balance");
+        }
+
+        if (slotId != null) {
+            Slot slot = slotRepository.findWithLockingById(slotId)
+                    .orElseThrow(() -> new RuntimeException("Slot not found"));
+
+            if (Boolean.TRUE.equals(slot.getBooked())) {
+                throw new RuntimeException("Selected slot is already booked");
+            }
+
+            if (sportId != null && !sportId.equals(slot.getSport().getId())) {
+                throw new RuntimeException("Selected slot does not belong to selected sport");
+            }
+
+            Booking booking = new Booking();
+            booking.setUserId(user.getId());
+            booking.setSportId(slot.getSport().getId());
+            booking.setSlotId(slot.getId());
+            booking.setAmount(amount);
+            booking.setStatus("CONFIRMED");
+            booking.setPaymentMode("WALLET");
+            booking.setCreatedAt(Instant.now().toString());
+
+            slot.setBooked(true);
+            slotRepository.save(slot);
+            bookingRepository.save(booking);
         }
 
         user.setBalance(user.getBalance() - amount);
@@ -350,6 +409,14 @@ public class UserServiceImpl {
         dto.setBalanceAfter(tx.getBalanceAfter());
         return dto;
     }
+
+    private String normalizeActivity(String activity) {
+        if (activity == null) {
+            return "";
+        }
+        return activity.trim().toLowerCase(Locale.ROOT).replaceAll("\\s+", " ");
+    }
+
     public PlayBoxUser updateUser(PlayBoxUser user) {
         PlayBoxUser existing = userRepo.findById(user.getId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -358,6 +425,57 @@ public class UserServiceImpl {
         existing.setEmail(user.getEmail());
     
         return userRepo.save(existing);
+    }
+
+    @Transactional
+    public PlayBoxUser cancelCard(String cardUid, String adminUsername, String adminPassword) {
+        if (cardUid == null || cardUid.isBlank()) {
+            throw new RuntimeException("Card UID is required");
+        }
+        if (adminUsername == null || adminUsername.isBlank()) {
+            throw new RuntimeException("Admin username is required");
+        }
+        if (adminPassword == null || adminPassword.isBlank()) {
+            throw new RuntimeException("Admin password is required");
+        }
+
+        AdminUser admin = adminUserRepository.findByUsername(adminUsername);
+        if (admin == null || !adminPassword.equals(admin.getPassword())) {
+            throw new RuntimeException("Invalid admin credentials");
+        }
+
+        PlayBoxUser user = userRepo.findByCardUid(cardUid)
+                .orElseThrow(() -> new RuntimeException("User not found for card"));
+
+        user.setCardUid(null);
+        user.setUpdatedAt(LocalDateTime.now().toString());
+        return userRepo.save(user);
+    }
+
+    @Transactional
+    public PlayBoxUser assignCard(Integer userId, String cardUid) {
+        if (userId == null) {
+            throw new RuntimeException("User ID is required");
+        }
+        if (cardUid == null || cardUid.isBlank()) {
+            throw new RuntimeException("Card UID is required");
+        }
+
+        PlayBoxUser existingCardOwner = getByCardUid(cardUid);
+        if (existingCardOwner != null) {
+            throw new RuntimeException("Card is already assigned to another user");
+        }
+
+        PlayBoxUser user = userRepo.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (user.getCardUid() != null && !user.getCardUid().isBlank()) {
+            throw new RuntimeException("User already has an assigned card");
+        }
+
+        user.setCardUid(cardUid);
+        user.setUpdatedAt(LocalDateTime.now().toString());
+        return userRepo.save(user);
     }
     
 }

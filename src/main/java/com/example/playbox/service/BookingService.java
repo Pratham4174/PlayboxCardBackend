@@ -2,10 +2,16 @@ package com.example.playbox.service;
 
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.playbox.dto.AdminSlotStatusDTO;
+import com.example.playbox.dto.AdminSportDayOverviewDTO;
 import com.example.playbox.model.Booking;
 import com.example.playbox.model.PlayBoxUser;
 import com.example.playbox.model.Slot;
@@ -88,7 +94,74 @@ public class BookingService {
     
         return bookingRepository.save(booking);
     }
-    
-    
-}
 
+    @Transactional(readOnly = true)
+    public AdminSportDayOverviewDTO getSportDayOverview(Long sportId, String date) {
+        Sport sport = sportRepository.findById(sportId)
+                .orElseThrow(() -> new RuntimeException("Sport not found"));
+
+        List<Slot> slots = slotRepository.findBySport_IdAndSlotDate(sportId, date);
+        List<Long> slotIds = slots.stream().map(Slot::getId).toList();
+
+        Map<Long, Booking> bookingBySlotId = new HashMap<>();
+        if (!slotIds.isEmpty()) {
+            List<Booking> bookings = bookingRepository.findBySlotIdInAndStatus(slotIds, "CONFIRMED");
+            for (Booking booking : bookings) {
+                bookingBySlotId.putIfAbsent(booking.getSlotId(), booking);
+            }
+        }
+
+        List<Integer> bookedUserIds = bookingBySlotId.values().stream()
+                .map(Booking::getUserId)
+                .toList();
+        Map<Integer, PlayBoxUser> usersById = new HashMap<>();
+        if (!bookedUserIds.isEmpty()) {
+            userRepository.findAllById(bookedUserIds).forEach(user -> usersById.put(user.getId(), user));
+        }
+
+        List<AdminSlotStatusDTO> slotStatuses = new ArrayList<>();
+        int bookedCount = 0;
+        for (Slot slot : slots) {
+            Booking booking = bookingBySlotId.get(slot.getId());
+            boolean isBooked = booking != null || Boolean.TRUE.equals(slot.getBooked());
+            if (isBooked) {
+                bookedCount++;
+            }
+
+            AdminSlotStatusDTO dto = new AdminSlotStatusDTO();
+            dto.setSlotId(slot.getId());
+            dto.setSlotDate(slot.getSlotDate());
+            dto.setStartTime(slot.getStartTime());
+            dto.setEndTime(slot.getEndTime());
+            dto.setBooked(isBooked);
+
+            if (booking != null) {
+                dto.setBookingId(booking.getId());
+                dto.setUserId(booking.getUserId());
+                dto.setAmount(booking.getAmount());
+                dto.setStatus(booking.getStatus());
+                dto.setPaymentMode(booking.getPaymentMode());
+                dto.setCreatedAt(booking.getCreatedAt());
+
+                PlayBoxUser user = usersById.get(booking.getUserId());
+                dto.setUserName(user != null ? user.getName() : null);
+            }
+
+            slotStatuses.add(dto);
+        }
+
+        AdminSportDayOverviewDTO overview = new AdminSportDayOverviewDTO();
+        overview.setSportId(sport.getId());
+        overview.setSportName(sport.getName());
+        overview.setCourtName(sport.getCourtName());
+        overview.setDate(date);
+        overview.setTotalSlots(slots.size());
+        overview.setBookedSlots(bookedCount);
+        overview.setEmptySlots(Math.max(slots.size() - bookedCount, 0));
+        overview.setSlots(slotStatuses);
+
+        return overview;
+    }
+
+
+}

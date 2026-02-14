@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.playbox.dto.UserDetailsDTO;
 import com.example.playbox.dto.UserStatsDTO;
 import com.example.playbox.dto.UserSummaryDTO;
+import com.example.playbox.dto.CancelCardRequest;
+import com.example.playbox.dto.AssignCardRequest;
 import com.example.playbox.model.PlayBoxUser;
 import com.example.playbox.service.UserServiceImpl;
 
@@ -51,9 +53,11 @@ public class UserController {
             @RequestParam String cardUid,
             @RequestParam float amount,
             @RequestParam String deductor,
-            @RequestParam String description
+            @RequestParam String description,
+            @RequestParam(required = false) Long sportId,
+            @RequestParam(required = false) Long slotId
     ) {
-        return userService.deductBalance(cardUid, amount, deductor, description);
+        return userService.deductBalance(cardUid, amount, deductor, description, sportId, slotId);
     }
     
 
@@ -95,10 +99,29 @@ public PlayBoxUser getByPhone(@PathVariable String phone) {
         return userService.searchUsers(q);
     }
 
-    @PutMapping("/update")
+@PutMapping("/update")
 public PlayBoxUser updateUser(@RequestBody PlayBoxUser updatedUser) {
     return userService.updateUser(updatedUser);
 }
 
+@PostMapping("/cancel-card")
+public PlayBoxUser cancelCard(@RequestBody CancelCardRequest request) {
+    if (request.getCardUid() == null || request.getAdminUsername() == null || request.getAdminPassword() == null) {
+        throw new RuntimeException("cardUid, adminUsername and adminPassword are required");
+    }
+    return userService.cancelCard(
+            request.getCardUid(),
+            request.getAdminUsername(),
+            request.getAdminPassword()
+    );
 }
 
+@PostMapping("/assign-card")
+public PlayBoxUser assignCard(@RequestBody AssignCardRequest request) {
+    if (request.getUserId() == null || request.getCardUid() == null) {
+        throw new RuntimeException("userId and cardUid are required");
+    }
+    return userService.assignCard(request.getUserId(), request.getCardUid());
+}
+
+}
